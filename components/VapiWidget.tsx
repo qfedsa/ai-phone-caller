@@ -30,14 +30,14 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
   useEffect(() => {
     const loadVapiSDK = () => {
       // Check if Vapi SDK is already loaded
-      if (typeof window !== 'undefined' && (window as any).vapiSDK) {
+      if (typeof window !== 'undefined' && (window as any).VapiClient) {
         setIsSDKLoaded(true);
         return;
       }
 
       const script = document.createElement('script');
-      // Correct VAPI CDN URL from official docs
-      script.src = 'https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js';
+      // Use the vapi-client.js instead
+      script.src = 'https://cdn.vapi.ai/webclient/latest/vapi-client.js';
       script.defer = true;
       script.async = true;
       script.onload = () => {
@@ -67,25 +67,15 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
     }
 
     try {
-      // Initialize VAPI using the correct SDK structure
-      const vapiSDK = (window as any).vapiSDK;
-      if (!vapiSDK) {
+      // Initialize VAPI Client (no default button)
+      const VapiClient = (window as any).VapiClient;
+      if (!VapiClient) {
         throw new Error('VAPI SDK not loaded');
       }
       
-      // Run VAPI with assistant config - but hide the default button
       console.log('Initializing VAPI with Assistant ID:', agentId);
-      const vapi = vapiSDK.run({
-        apiKey: publicKey,
-        assistant: agentId,
-        config: {
-          // Hide the default VAPI button
-          position: 'bottom-right',
-          offset: '40px',
-          width: '0px',  // Hide it
-          height: '0px',
-          opacity: 0,
-        }
+      const vapi = new VapiClient({
+        publicKey: publicKey,
       });
       
       vapiInstanceRef.current = vapi;
@@ -127,7 +117,7 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
 
   // Start call handler
   const startCall = async () => {
-    if (!vapiInstanceRef.current) {
+    if (!vapiInstanceRef.current || !agentId) {
       setErrorMessage('System nicht bereit. Bitte laden Sie die Seite neu.');
       return;
     }
@@ -136,14 +126,9 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
       setCallStatus('connecting');
       setErrorMessage('');
 
-      // Trigger the VAPI widget's start method
-      // The SDK already knows the assistant from init
-      const vapiButton = document.querySelector('[data-vapi-button]') as HTMLElement;
-      if (vapiButton) {
-        vapiButton.click();
-      } else if (vapiInstanceRef.current.start) {
-        await vapiInstanceRef.current.start();
-      }
+      console.log('Starting call with Assistant ID:', agentId);
+      // Start the call with the assistant ID
+      await vapiInstanceRef.current.start(agentId);
     } catch (error) {
       console.error('Error starting call:', error);
       setErrorMessage('Anruf konnte nicht gestartet werden. Bitte versuchen Sie es erneut.');
