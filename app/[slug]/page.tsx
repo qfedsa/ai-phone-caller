@@ -36,7 +36,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /**
  * Dynamic route page for personalized lead demos
  * Displays a personalized landing page with VAPI widget
+ * 
+ * IMPORTANT: This page must NOT be cached as it contains dynamic lead data
+ * that changes frequently via Make.com workflow
  */
+
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function LeadPage({ params }: PageProps) {
   const lead = await getLeadBySlug(params.slug);
 
