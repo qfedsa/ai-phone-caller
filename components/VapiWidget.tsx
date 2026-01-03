@@ -29,13 +29,14 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
   // Load VAPI SDK from CDN
   useEffect(() => {
     const loadVapiSDK = () => {
-      if (window.vapiSDK) {
+      // Check if Vapi is already loaded
+      if (typeof window !== 'undefined' && (window as any).Vapi) {
         setIsSDKLoaded(true);
         return;
       }
 
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@vapi-ai/web@latest/dist/index.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.2/dist/index.js';
       script.async = true;
       script.onload = () => {
         console.log('VAPI SDK loaded successfully');
@@ -64,8 +65,12 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
     }
 
     try {
-      // Initialize VAPI
-      const vapi = new window.vapiSDK.default(publicKey);
+      // Initialize VAPI - use window.Vapi directly
+      const Vapi = (window as any).Vapi;
+      if (!Vapi) {
+        throw new Error('VAPI SDK not loaded');
+      }
+      const vapi = new Vapi(publicKey);
       vapiInstanceRef.current = vapi;
 
       // Set up event listeners
@@ -251,11 +256,6 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
             </button>
           )}
         </div>
-
-        {/* Helper Text */}
-        <p className="text-xs text-gray-500 text-center mt-4">
-          Der Anruf erfolgt über Ihr Gerät. Es können Standardgebühren anfallen.
-        </p>
       </div>
     </div>
   );
