@@ -1,13 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-
-// VAPI SDK types
-declare global {
-  interface Window {
-    vapiSDK?: any;
-  }
-}
+import Vapi from '@vapi-ai/web';
 
 interface VapiWidgetProps {
   agentId: string;
@@ -19,46 +13,15 @@ type CallStatus = 'idle' | 'loading' | 'connecting' | 'active' | 'ended' | 'erro
 /**
  * VAPI Widget Component
  * Handles the initialization and management of VAPI voice calls
+ * Uses @vapi-ai/web npm package for clean integration
  */
 export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
   const [callStatus, setCallStatus] = useState<CallStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const vapiInstanceRef = useRef<any>(null);
+  const vapiInstanceRef = useRef<Vapi | null>(null);
 
-  // Load VAPI SDK from CDN
+  // Initialize VAPI instance once on mount
   useEffect(() => {
-    const loadVapiSDK = () => {
-      // Check if Vapi SDK is already loaded
-      if (typeof window !== 'undefined' && (window as any).VapiClient) {
-        setIsSDKLoaded(true);
-        return;
-      }
-
-      const script = document.createElement('script');
-      // Use the vapi-client.js instead
-      script.src = 'https://cdn.vapi.ai/webclient/latest/vapi-client.js';
-      script.defer = true;
-      script.async = true;
-      script.onload = () => {
-        console.log('VAPI SDK loaded successfully');
-        setIsSDKLoaded(true);
-      };
-      script.onerror = () => {
-        console.error('Failed to load VAPI SDK');
-        setErrorMessage('Fehler beim Laden des Telefon-Systems. Bitte laden Sie die Seite neu.');
-        setCallStatus('error');
-      };
-      document.body.appendChild(script);
-    };
-
-    loadVapiSDK();
-  }, []);
-
-  // Initialize VAPI instance
-  useEffect(() => {
-    if (!isSDKLoaded || vapiInstanceRef.current) return;
-
     const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
     if (!publicKey) {
       setErrorMessage('VAPI-Konfiguration fehlt. Bitte kontaktieren Sie den Support.');
@@ -67,53 +30,51 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
     }
 
     try {
-      // Initialize VAPI Client (no default button)
-      const VapiClient = (window as any).VapiClient;
-      if (!VapiClient) {
-        throw new Error('VAPI SDK not loaded');
-      }
+      console.log('Initializing VAPI with Public Key and Assistant ID:', agentId);
       
-      console.log('Initializing VAPI with Assistant ID:', agentId);
-      const vapi = new VapiClient({
-        publicKey: publicKey,
-      });
-      
+      // Create Vapi instance
+      const vapi = new Vapi(publicKey);
       vapiInstanceRef.current = vapi;
 
       // Set up event listeners
-      if (vapi && vapi.on) {
-        vapi.on('call-start', () => {
-          console.log('Call started');
-          setCallStatus('active');
-        });
+      vapi.on('call-start', () => {
+        console.log('Call started');
+        setCallStatus('active');
+      });
 
-        vapi.on('call-end', () => {
-          console.log('Call ended');
-          setCallStatus('ended');
-          setTimeout(() => setCallStatus('idle'), 3000);
-        });
+      vapi.on('call-end', () => {
+        console.log('Call ended');
+        setCallStatus('ended');
+        setTimeout(() => setCallStatus('idle'), 3000);
+      });
 
-        vapi.on('speech-start', () => {
-          console.log('Assistant started speaking');
-        });
+      vapi.on('speech-start', () => {
+        console.log('Assistant started speaking');
+      });
 
-        vapi.on('speech-end', () => {
-          console.log('Assistant finished speaking');
-        });
+      vapi.on('speech-end', () => {
+        console.log('Assistant finished speaking');
+      });
 
-        vapi.on('error', (error: any) => {
-          console.error('VAPI error:', error);
-          setErrorMessage('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
-          setCallStatus('error');
-        });
-      }
+      vapi.on('error', (error: any) => {
+        console.error('VAPI error:', error);
+        setErrorMessage('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+        setCallStatus('error');
+      });
 
     } catch (error) {
       console.error('Error initializing VAPI:', error);
       setErrorMessage('Fehler beim Initialisieren des Telefon-Systems.');
       setCallStatus('error');
     }
-  }, [isSDKLoaded, agentId]);
+
+    // Cleanup on unmount
+    return () => {
+      if (vapiInstanceRef.current) {
+        vapiInstanceRef.current.stop();
+      }
+    };
+  }, [agentId]);
 
   // Start call handler
   const startCall = async () => {
@@ -128,7 +89,7 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
 
       console.log('Starting call with Assistant ID:', agentId);
       // Start the call with the assistant ID
-      await vapiInstanceRef.current.start(agentId);
+      vapiInstanceRef.current.start(agentId);
     } catch (error) {
       console.error('Error starting call:', error);
       setErrorMessage('Anruf konnte nicht gestartet werden. Bitte versuchen Sie es erneut.');
@@ -230,7 +191,7 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
           {callStatus === 'idle' || callStatus === 'ended' || callStatus === 'error' ? (
             <button
               onClick={startCall}
-              disabled={!isSDKLoaded || !agentId}
+              disabled={!agentId}
               className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
             >
               <span className="flex items-center justify-center gap-2">
