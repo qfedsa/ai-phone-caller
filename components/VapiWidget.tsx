@@ -29,21 +29,20 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
   // Load VAPI SDK from CDN
   useEffect(() => {
     const loadVapiSDK = () => {
-      // Check if Vapi is already loaded
-      if (typeof window !== 'undefined' && (window as any).Vapi) {
+      // Check if Vapi SDK is already loaded
+      if (typeof window !== 'undefined' && (window as any).vapiSDK) {
         setIsSDKLoaded(true);
         return;
       }
 
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@vapi-ai/web@2/dist/index.js';
+      // Correct VAPI CDN URL from official docs
+      script.src = 'https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js';
+      script.defer = true;
       script.async = true;
       script.onload = () => {
         console.log('VAPI SDK loaded successfully');
-        // Wait a bit to ensure Vapi is available on window
-        setTimeout(() => {
-          setIsSDKLoaded(true);
-        }, 100);
+        setIsSDKLoaded(true);
       };
       script.onerror = () => {
         console.error('Failed to load VAPI SDK');
@@ -68,50 +67,58 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
     }
 
     try {
-      // Initialize VAPI - use window.Vapi directly
-      const Vapi = (window as any).Vapi;
-      if (!Vapi) {
+      // Initialize VAPI using the correct SDK structure
+      const vapiSDK = (window as any).vapiSDK;
+      if (!vapiSDK) {
         throw new Error('VAPI SDK not loaded');
       }
-      const vapi = new Vapi(publicKey);
+      
+      // Run VAPI with assistant config
+      const vapi = vapiSDK.run({
+        apiKey: publicKey,
+        assistant: agentId,
+      });
+      
       vapiInstanceRef.current = vapi;
 
       // Set up event listeners
-      vapi.on('call-start', () => {
-        console.log('Call started');
-        setCallStatus('active');
-      });
+      if (vapi && vapi.on) {
+        vapi.on('call-start', () => {
+          console.log('Call started');
+          setCallStatus('active');
+        });
 
-      vapi.on('call-end', () => {
-        console.log('Call ended');
-        setCallStatus('ended');
-        setTimeout(() => setCallStatus('idle'), 3000);
-      });
+        vapi.on('call-end', () => {
+          console.log('Call ended');
+          setCallStatus('ended');
+          setTimeout(() => setCallStatus('idle'), 3000);
+        });
 
-      vapi.on('speech-start', () => {
-        console.log('Assistant started speaking');
-      });
+        vapi.on('speech-start', () => {
+          console.log('Assistant started speaking');
+        });
 
-      vapi.on('speech-end', () => {
-        console.log('Assistant finished speaking');
-      });
+        vapi.on('speech-end', () => {
+          console.log('Assistant finished speaking');
+        });
 
-      vapi.on('error', (error: any) => {
-        console.error('VAPI error:', error);
-        setErrorMessage('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
-        setCallStatus('error');
-      });
+        vapi.on('error', (error: any) => {
+          console.error('VAPI error:', error);
+          setErrorMessage('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+          setCallStatus('error');
+        });
+      }
 
     } catch (error) {
       console.error('Error initializing VAPI:', error);
       setErrorMessage('Fehler beim Initialisieren des Telefon-Systems.');
       setCallStatus('error');
     }
-  }, [isSDKLoaded]);
+  }, [isSDKLoaded, agentId]);
 
   // Start call handler
   const startCall = async () => {
-    if (!vapiInstanceRef.current || !agentId) {
+    if (!vapiInstanceRef.current) {
       setErrorMessage('System nicht bereit. Bitte laden Sie die Seite neu.');
       return;
     }
@@ -120,7 +127,11 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
       setCallStatus('connecting');
       setErrorMessage('');
 
-      await vapiInstanceRef.current.start(agentId);
+      // VAPI SDK automatically starts the call when button is clicked
+      // The SDK handles the call initiation
+      if (vapiInstanceRef.current.start) {
+        await vapiInstanceRef.current.start();
+      }
     } catch (error) {
       console.error('Error starting call:', error);
       setErrorMessage('Anruf konnte nicht gestartet werden. Bitte versuchen Sie es erneut.');
