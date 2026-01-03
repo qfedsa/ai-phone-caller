@@ -73,10 +73,19 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
         throw new Error('VAPI SDK not loaded');
       }
       
-      // Run VAPI with assistant config
+      // Run VAPI with assistant config - but hide the default button
+      console.log('Initializing VAPI with Assistant ID:', agentId);
       const vapi = vapiSDK.run({
         apiKey: publicKey,
         assistant: agentId,
+        config: {
+          // Hide the default VAPI button
+          position: 'bottom-right',
+          offset: '40px',
+          width: '0px',  // Hide it
+          height: '0px',
+          opacity: 0,
+        }
       });
       
       vapiInstanceRef.current = vapi;
@@ -127,9 +136,12 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
       setCallStatus('connecting');
       setErrorMessage('');
 
-      // VAPI SDK automatically starts the call when button is clicked
-      // The SDK handles the call initiation
-      if (vapiInstanceRef.current.start) {
+      // Trigger the VAPI widget's start method
+      // The SDK already knows the assistant from init
+      const vapiButton = document.querySelector('[data-vapi-button]') as HTMLElement;
+      if (vapiButton) {
+        vapiButton.click();
+      } else if (vapiInstanceRef.current.start) {
         await vapiInstanceRef.current.start();
       }
     } catch (error) {
