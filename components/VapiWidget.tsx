@@ -56,6 +56,10 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
         console.log('Assistant finished speaking');
       });
 
+      vapi.on('message', (message: any) => {
+        console.log('VAPI Message:', message);
+      });
+
       vapi.on('error', (error: any) => {
         console.error('VAPI error:', error);
         setErrorMessage('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
@@ -89,7 +93,8 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
 
       console.log('Starting call with Assistant ID:', agentId);
       // Start the call with the assistant ID
-      vapiInstanceRef.current.start(agentId);
+      // Pass empty overrides object to ensure we use the EXACT assistant config
+      vapiInstanceRef.current.start(agentId, {});
     } catch (error) {
       console.error('Error starting call:', error);
       setErrorMessage('Anruf konnte nicht gestartet werden. Bitte versuchen Sie es erneut.');
