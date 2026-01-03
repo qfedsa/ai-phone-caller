@@ -71,8 +71,8 @@ export default async function LeadPage({ params }: PageProps) {
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-              Hallo {lead.first_name}, erleben Sie selbst, wie eine KI-Telefon-Assistentin die Lead-Qualifizierung für {lead.company_name} revolutionieren kann.
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+              Hallo <span className="text-primary-600">{lead.first_name}</span>, erleben Sie, wie KI die Lead-Qualifizierung für <span className="text-primary-600">{lead.company_name}</span> revolutionieren kann.
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Testen Sie jetzt live, wie Sarah Ihre Immobilien-Interessenten qualifiziert

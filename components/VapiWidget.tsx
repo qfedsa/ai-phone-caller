@@ -36,11 +36,14 @@ export default function VapiWidget({ agentId, companyName }: VapiWidgetProps) {
       }
 
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.2/dist/index.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/@vapi-ai/web@2/dist/index.js';
       script.async = true;
       script.onload = () => {
         console.log('VAPI SDK loaded successfully');
-        setIsSDKLoaded(true);
+        // Wait a bit to ensure Vapi is available on window
+        setTimeout(() => {
+          setIsSDKLoaded(true);
+        }, 100);
       };
       script.onerror = () => {
         console.error('Failed to load VAPI SDK');
