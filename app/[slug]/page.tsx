@@ -74,13 +74,9 @@ export default async function LeadPage({ params }: PageProps) {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
               Hallo <span className="text-primary-600">{lead.first_name}</span>, erleben Sie, wie KI die Lead-Qualifizierung für <span className="text-primary-600">{lead.company_name}</span> revolutionieren kann.
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Testen Sie jetzt live, wie Sarah Ihre Immobilien-Interessenten qualifiziert
             </p>
-            <div className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 px-4 py-2 rounded-full text-sm font-medium">
-              <span className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></span>
-              Verfügbar für einen Test-Anruf
-            </div>
           </div>
 
           {/* VAPI Widget */}
